@@ -1,56 +1,49 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PlusCircle, Trash2, Edit3, Image, LogOut, CheckCircle, Package, UserPlus } from 'lucide-react';
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  viscosity: string;
-  standards: string;
-  operating_life: string;
-  packaging: string;
-  image_url: string;
-  application: string;
-  description: string;
-  in_stock: boolean;
-}
+import { initialProducts, Product } from '@/data/products';
+import { PlusCircle, Trash2, Edit3, Image, LogOut, CheckCircle, Package, UserPlus, X } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   
-  // New Product Form State
+  // Create / Edit State
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form, setForm] = useState({
     name: '',
     category: 'engine',
     viscosity: '',
     standards: '',
-    operating_life: '500-600 Operating Hours',
+    operatingLife: '500-600 Operating Hours',
     packaging: '18L Pail, 170kg Barrel',
     application: '',
     description: '',
-    image_url: '',
-    in_stock: true
+    imagePath: '',
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
 
-  // Load Products from Local Storage / Database
+  // Pre-load products on mount
   useEffect(() => {
     const saved = localStorage.getItem('monarch_live_products');
     if (saved) {
-      setProducts(JSON.parse(saved));
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProducts(parsed);
+          return;
+        }
+      } catch (e) {}
     }
+    // If empty, initialize with all 12 official brochure products!
+    setProducts(initialProducts);
+    localStorage.setItem('monarch_live_products', JSON.stringify(initialProducts));
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default authorized staff login (can be added via Supabase Auth)
     if (email.toLowerCase().includes('@') && password.length >= 6) {
       setIsLoggedIn(true);
       setMessage('');
@@ -59,66 +52,121 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file);
-      // Create instant preview URL
-      setForm({ ...form, image_url: URL.createObjectURL(file) });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm({ ...form, imagePath: reader.result as string });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleSaveProduct = (e: React.FormEvent) => {
+  // Save new product or edit existing
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.viscosity) return;
 
-    const newProduct: Product = {
-      id: 'prod-' + Date.now(),
-      name: form.name,
-      category: form.category,
-      viscosity: form.viscosity,
-      standards: form.standards,
-      operating_life: form.operating_life,
-      packaging: form.packaging,
-      image_url: form.image_url || 'https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&w=600&q=80',
-      application: form.application,
-      description: form.description,
-      in_stock: form.in_stock
-    };
+    let updatedList: Product[] = [];
 
-    const updated = [newProduct, ...products];
-    setProducts(updated);
-    localStorage.setItem('monarch_live_products', JSON.stringify(updated));
+    if (editingProduct) {
+      // Update existing item
+      updatedList = products.map(p => 
+        p.id === editingProduct.id 
+          ? { ...p, ...form, containerType: p.containerType } 
+          : p
+      );
+      setMessage(`Successfully updated "${form.name}"!`);
+      setEditingProduct(null);
+    } else {
+      // Create new item
+      const newProduct: Product = {
+        id: 'prod-' + Date.now(),
+        name: form.name,
+        category: form.category as any,
+        viscosity: form.viscosity,
+        standards: form.standards || 'Meets Industry Standards',
+        operatingLife: form.operatingLife || '500 Hours',
+        packaging: form.packaging || '18L, 170kg',
+        containerType: 'pail-black-gold',
+        imagePath: form.imagePath || '/logo.png',
+        application: form.application || 'Heavy Machinery',
+        description: form.description || '',
+      };
+      updatedList = [newProduct, ...products];
+      setMessage(`Successfully added "${form.name}" to live store!`);
+    }
 
-    setMessage('Product successfully published to Athi River live store!');
+    setProducts(updatedList);
+    localStorage.setItem('monarch_live_products', JSON.stringify(updatedList));
+
+    // Optional: Sync to Supabase table
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseAnonKey) {
+      try {
+        await fetch(`${supabaseUrl}/rest/v1/products`, {
+          method: 'POST',
+          headers: {
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${supabaseAnonKey}`,
+            'Content-Type': 'application/json',
+            Prefer: 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
+            name: form.name,
+            category: form.category,
+            viscosity: form.viscosity,
+            standards: form.standards,
+            operating_life: form.operatingLife,
+            packaging: form.packaging,
+            image_url: form.imagePath,
+            description: form.description
+          })
+        });
+      } catch (err) {}
+    }
+
+    // Reset Form
     setForm({
       name: '',
       category: 'engine',
       viscosity: '',
       standards: '',
-      operating_life: '500-600 Operating Hours',
+      operatingLife: '500-600 Operating Hours',
       packaging: '18L Pail, 170kg Barrel',
       application: '',
       description: '',
-      image_url: '',
-      in_stock: true
+      imagePath: '',
     });
-    setImageFile(null);
+
     setTimeout(() => setMessage(''), 3500);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this product from the live catalog?')) {
+  const handleStartEdit = (p: Product) => {
+    setEditingProduct(p);
+    setForm({
+      name: p.name,
+      category: p.category,
+      viscosity: p.viscosity,
+      standards: p.standards,
+      operatingLife: p.operatingLife,
+      packaging: p.packaging,
+      application: p.application,
+      description: p.description,
+      imagePath: p.imagePath || '',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete "${name}" from the live website?`)) {
       const updated = products.filter(p => p.id !== id);
       setProducts(updated);
       localStorage.setItem('monarch_live_products', JSON.stringify(updated));
-    }
-  };
-
-  const handleInviteManager = () => {
-    const newStaff = prompt("Enter the email address of the new manager you want to authorize:");
-    if (newStaff && newStaff.includes('@')) {
-      alert(`An invite and manager access key have been authorized for: ${newStaff}`);
+      setMessage(`Removed "${name}" from live store.`);
+      setTimeout(() => setMessage(''), 3000);
     }
   };
 
@@ -130,7 +178,7 @@ export default function AdminDashboard() {
             <div className="inline-block bg-[#8B0032] text-white text-xs font-black px-3 py-1 rounded mb-2">
               MONARCH PORTAL
             </div>
-            <h1 className="text-xl font-black text-slate-900">Manager Sign In</h1>
+            <h1 className="text-xl font-black text-slate-900">Staff Sign In</h1>
             <p className="text-xs text-slate-500 mt-1">Authorized for staff & inventory managers</p>
           </div>
 
@@ -138,7 +186,7 @@ export default function AdminDashboard() {
 
           <form onSubmit={handleLogin} className="space-y-4 text-xs">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Email Address</label>
+              <label className="font-bold text-slate-700 block mb-1">Staff Email</label>
               <input
                 required
                 type="email"
@@ -163,7 +211,7 @@ export default function AdminDashboard() {
               type="submit"
               className="w-full bg-[#8B0032] hover:bg-[#6b0026] text-white font-bold py-3 rounded-lg transition-colors shadow-md text-xs"
             >
-              Access Product Manager
+              Log In to Manager Dashboard
             </button>
           </form>
 
@@ -184,21 +232,15 @@ export default function AdminDashboard() {
         <div className="flex flex-wrap justify-between items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
           <div>
             <div className="text-[11px] font-bold text-[#8B0032] tracking-wider uppercase">Monarch Kenya Hub</div>
-            <h1 className="text-2xl font-black text-slate-900">Product & Inventory Management</h1>
-            <p className="text-xs text-slate-500">Manager: {email || 'omarkenya4@gmail.com'}</p>
+            <h1 className="text-2xl font-black text-slate-900">Product & Inventory Manager</h1>
+            <p className="text-xs text-slate-500">Signed in: {email || 'omarkenya4@gmail.com'}</p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleInviteManager}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors border border-slate-300"
-            >
-              <UserPlus size={14} /> Add Manager
-            </button>
             <Link
               href="/"
               className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors"
             >
-              View Live Website
+              View Live Storefront
             </Link>
             <button
               onClick={() => setIsLoggedIn(false)}
@@ -216,11 +258,25 @@ export default function AdminDashboard() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Product Upload Form */}
+          {/* Add / Edit Form */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
-            <h2 className="text-base font-black text-slate-900 mb-4 flex items-center gap-2">
-              <PlusCircle size={18} className="text-[#8B0032]" /> Upload New Product
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                {editingProduct ? <Edit3 size={18} className="text-[#8B0032]" /> : <PlusCircle size={18} className="text-[#8B0032]" />}
+                {editingProduct ? `Edit: ${editingProduct.name}` : 'Upload New Product'}
+              </h2>
+              {editingProduct && (
+                <button
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setForm({ name: '', category: 'engine', viscosity: '', standards: '', operatingLife: '', packaging: '', application: '', description: '', imagePath: '' });
+                  }}
+                  className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"
+                >
+                  <X size={14} /> Cancel
+                </button>
+              )}
+            </div>
 
             <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
               <div>
@@ -264,7 +320,7 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Packaging Format</label>
+                  <label className="font-bold text-slate-700 block mb-1">Packaging Sizes</label>
                   <input
                     type="text"
                     placeholder="18L, 170kg"
@@ -279,7 +335,7 @@ export default function AdminDashboard() {
                 <label className="font-bold text-slate-700 block mb-1">OEM Approvals</label>
                 <input
                   type="text"
-                  placeholder="e.g. Caterpillar ECF-3, Volvo VDS-4.5, Cummins"
+                  placeholder="e.g. Caterpillar ECF-3, Volvo VDS-4.5"
                   value={form.standards}
                   onChange={(e) => setForm({ ...form, standards: e.target.value })}
                   className="w-full border border-slate-300 rounded-lg p-2.5 focus:outline-[#8B0032]"
@@ -288,23 +344,24 @@ export default function AdminDashboard() {
 
               {/* Photo Upload Box */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Product Photograph (Pail / Drum)</label>
+                <label className="font-bold text-slate-700 block mb-1">Product Photo</label>
                 <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-[#8B0032] transition-colors bg-slate-50">
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleImageChange}
+                    onChange={handleImageUpload}
                     className="hidden"
-                    id="product-photo"
+                    id="admin-photo"
                   />
-                  <label htmlFor="product-photo" className="cursor-pointer">
-                    {form.image_url ? (
-                      <img src={form.image_url} alt="Preview" className="h-28 mx-auto object-contain mb-2 rounded" />
+                  <label htmlFor="admin-photo" className="cursor-pointer">
+                    {form.imagePath ? (
+                      <img src={form.imagePath} alt="Preview" className="h-24 mx-auto object-contain mb-2 rounded" />
                     ) : (
                       <Image size={32} className="mx-auto text-slate-400 mb-1" />
                     )}
-                    <span className="text-[#8B0032] font-bold block">Click to select photo</span>
-                    <span className="text-[10px] text-slate-400">PNG, JPG, or WebP up to 5MB</span>
+                    <span className="text-[#8B0032] font-bold block">
+                      {form.imagePath ? "Click to change photo" : "Select photo from laptop/phone"}
+                    </span>
                   </label>
                 </div>
               </div>
@@ -324,15 +381,15 @@ export default function AdminDashboard() {
                 type="submit"
                 className="w-full bg-[#8B0032] hover:bg-[#6b0026] text-white font-bold py-3 rounded-xl transition-colors shadow-md"
               >
-                Publish to Athi River Live Store
+                {editingProduct ? 'Save Changes' : 'Publish Product to Live Website'}
               </button>
             </form>
           </div>
 
-          {/* Existing Live Products List */}
+          {/* Active Items with Edit and Delete Buttons */}
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <h2 className="text-base font-black text-slate-900 mb-4 flex items-center gap-2">
-              <Package size={18} className="text-[#8B0032]" /> Live Catalog Items ({products.length})
+              <Package size={18} className="text-[#8B0032]" /> Manage Active Catalog ({products.length} Items)
             </h2>
 
             <div className="divide-y divide-slate-100 max-h-[700px] overflow-y-auto">
@@ -340,7 +397,7 @@ export default function AdminDashboard() {
                 <div key={p.id} className="py-4 flex items-center justify-between gap-4 text-xs">
                   <div className="flex items-center gap-3">
                     <img
-                      src={p.image_url || '/logo.png'}
+                      src={p.imagePath || '/logo.png'}
                       alt={p.name}
                       className="w-14 h-14 object-contain rounded-lg bg-slate-50 border p-1"
                       onError={(e: any) => { e.target.src = '/logo.png'; }}
@@ -350,17 +407,22 @@ export default function AdminDashboard() {
                       <div className="text-slate-500 font-mono text-[11px] mt-0.5">
                         {p.viscosity} • {p.packaging}
                       </div>
-                      <span className="inline-block mt-1 bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded text-[10px]">
-                        Active In Store
-                      </span>
+                      <div className="text-[10px] text-slate-400 mt-0.5">{p.standards}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleDelete(p.id)}
+                      onClick={() => handleStartEdit(p)}
+                      className="text-slate-700 hover:text-slate-900 p-2 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1 font-bold"
+                      title="Edit Details"
+                    >
+                      <Edit3 size={15} /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(p.id, p.name)}
                       className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete product"
+                      title="Delete Product"
                     >
                       <Trash2 size={16} />
                     </button>
