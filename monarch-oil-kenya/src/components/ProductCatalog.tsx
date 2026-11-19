@@ -45,7 +45,6 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
           });
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
-            // Map Supabase snake_case to Product structure
             const mapped: Product[] = data.map((d: any) => ({
               id: d.id,
               name: d.name,
@@ -53,7 +52,7 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
               viscosity: d.viscosity,
               standards: d.standards || '',
               operatingLife: d.operating_life || '',
-              packaging: d.packaging || '18L, 170kg',
+              packaging: d.packaging || '18L Pail, 170kg Barrel',
               containerType: d.container_type || 'pail-black-gold',
               imagePath: d.image_url || '/logo.png',
               application: d.application || '',
@@ -77,7 +76,7 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [defaultProducts]);
 
   const categories = [
     { key: 'all', en: 'All Products', zh: '全部产品' },
@@ -107,14 +106,14 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
     <section id="products" className="py-16 px-6 max-w-7xl mx-auto">
       <div className="text-center mb-12">
         <span className="text-xs font-extrabold text-[#8B0032] tracking-widest uppercase">
-          {lang === 'EN' ? 'Athi River Direct Inventory' : '肯尼亚现货库存'}
+          {lang === 'EN' ? 'Factory Direct Production' : '阿西河工厂直发'}
         </span>
         <h2 className="text-3xl font-black text-[#1a1d24] mt-1">
-          {lang === 'EN' ? 'Official Technical Specifications' : '产品技术参数与车队询价'}
+          {lang === 'EN' ? 'Official Technical Specifications' : '产品技术参数与出厂询价'}
         </h2>
         <p className="text-slate-500 text-sm mt-2">
           {lang === 'EN' 
-            ? 'Prices are quote-based for bulk fleet supply, LPOs, and site deliveries across Kenya.' 
+            ? 'Factory-direct formulation and bulk supply for mining, quarries, cement, and construction fleets across Kenya.' 
             : '工厂直供，按车队用量核算批发报价，支持 LPO 及现场看油。'}
         </p>
 
@@ -165,12 +164,12 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
                   />
                 ) : (
                   <div className="w-28 h-36 bg-slate-900 rounded-t-lg rounded-b-md shadow-md flex flex-col justify-between p-2 text-center text-white border-t-4 border-amber-400">
-                    <div className="text-[9px] font-bold text-amber-400 uppercase tracking-tighter">移山 FULMER</div>
+                    <div className="text-[9px] font-bold text-amber-400 uppercase tracking-tighter">MONARCH</div>
                     <div>
-                      <div className="text-xs font-black text-white leading-tight">{p.name.split(' ')[1] || 'MONARCH'}</div>
+                      <div className="text-xs font-black text-white leading-tight">{p.name.split(' ')[1] || 'LUBRICANT'}</div>
                       <div className="text-[8px] text-slate-300 font-mono mt-1">{p.viscosity}</div>
                     </div>
-                    <div className="text-[8px] bg-red-700 py-0.5 rounded text-white font-bold uppercase">18L / 170KG</div>
+                    <div className="text-[8px] bg-[#8B0032] py-0.5 rounded text-white font-bold uppercase">18L / 170KG</div>
                   </div>
                 )}
               </div>
@@ -182,7 +181,7 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
                   <div><strong className="text-slate-800">Viscosity:</strong> {p.viscosity}</div>
                   <div><strong className="text-slate-800">Approvals:</strong> {p.standards}</div>
                   <div><strong className="text-slate-800">Drain Life:</strong> {p.operatingLife}</div>
-                  <div><strong className="text-slate-800">Sizes:</strong> {p.packaging}</div>
+                  <div><strong className="text-slate-800">Packaging:</strong> {p.packaging}</div>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed border-t border-slate-100 pt-3">{p.description}</p>
               </div>
@@ -190,19 +189,19 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
 
             {/* Action Row */}
             <div className="p-6 pt-0">
-              <div className="text-xs text-emerald-700 font-bold bg-emerald-50 py-1 px-2 rounded mb-3 text-center">
-                ✔ {lang === 'EN' ? 'Stock Available at Athi River' : '阿西河仓库现货'}
+              <div className="text-xs text-emerald-700 font-bold bg-emerald-50 py-1 px-2 rounded mb-3 text-center border border-emerald-100">
+                ✔ {lang === 'EN' ? 'Direct Factory Production (Athi River)' : '阿西河工厂现货直发'}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setSelectedProduct(p)}
                   className="bg-[#8B0032] hover:bg-[#6b0026] text-white text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1 transition-colors"
                 >
-                  <FileText size={14} /> {lang === 'EN' ? 'Fleet Quote' : '车队询价'}
+                  <FileText size={14} /> {lang === 'EN' ? 'Factory Quote' : '出厂询价'}
                 </button>
                 <a
-                  href={`https://wa.me/254700000000?text=${encodeURIComponent(
-                    `Hello Monarch Kenya, I am inquiring about bulk availability for: ${p.name}`
+                  href={`https://wa.me/254740506085?text=${encodeURIComponent(
+                    `Hello Monarch Plant Desk, I am inquiring about factory supply for: ${p.name}`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -228,14 +227,14 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
             </button>
 
             <h3 className="font-extrabold text-[#1a1d24] text-lg mb-1">
-              {lang === 'EN' ? 'Request Fleet LPO Quotation' : '申请官方车队报价单'}
+              {lang === 'EN' ? 'Request Factory LPO Quotation' : '申请官方出厂报价单'}
             </h3>
             <p className="text-xs text-slate-500 mb-4">{selectedProduct.name}</p>
 
             {successMsg ? (
               <div className="py-8 text-center text-emerald-600">
                 <CheckCircle2 size={40} className="mx-auto mb-2" />
-                <p className="font-bold text-sm">Quote Dispatched to Sales Desk!</p>
+                <p className="font-bold text-sm">Quote Dispatched to Plant Sales Desk!</p>
                 <p className="text-xs text-slate-500">We will call you shortly on the provided number.</p>
               </div>
             ) : (
@@ -252,7 +251,7 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Contact Phone (or M-Pesa)</label>
+                  <label className="font-bold text-slate-700 block mb-1">Contact Phone (or WhatsApp)</label>
                   <input
                     required
                     type="tel"
@@ -288,7 +287,7 @@ export default function ProductCatalog({ products: defaultProducts, lang }: Cata
                   type="submit"
                   className="w-full bg-[#8B0032] hover:bg-[#6b0026] text-white font-bold py-2.5 rounded-lg transition-colors mt-2"
                 >
-                  Submit Official LPO Request
+                  Submit Official Factory LPO Request
                 </button>
               </form>
             )}
