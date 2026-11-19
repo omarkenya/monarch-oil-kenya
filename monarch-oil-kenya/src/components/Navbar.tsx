@@ -14,39 +14,40 @@ export default function Navbar({ lang, setLang }: NavbarProps) {
       {/* Top Notice Bar */}
       <div className="bg-[#0b132b] text-slate-300 text-xs py-2 px-6 flex justify-between items-center flex-wrap gap-2 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <span className="bg-[#8B0032] text-white px-2 py-0.5 rounded font-bold">KENYA HUB</span>
-          <span>Athi River, Near Toptank Greyland & CITAM Church, Machakos County</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Athi River Lubricant Blending & Production Plant, Machakos County</span>
         </div>
         <div className="flex items-center gap-4">
-          <a href="tel:+254700000000" className="flex items-center gap-1 hover:text-white">
-            <Phone size={13} /> +254 700 000 000
+          <a href="tel:+254142521446" className="flex items-center gap-1.5 hover:text-white transition-colors">
+            <Phone size={13} className="text-amber-400" /> +254 142 521 446
           </a>
-          <a href="https://wa.me/254700000000" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300">
-            <MessageSquare size={13} /> Fleet WhatsApp
+          <a 
+            href="https://wa.me/254740506085" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-bold transition-colors"
+          >
+            <MessageSquare size={13} /> WhatsApp: +254 740 506 085
           </a>
           <Link href="/admin" className="text-slate-400 hover:text-white underline">
-            Staff Sign In
+            Staff Portal
           </Link>
         </div>
       </div>
 
-      {/* Main Header with Official Logo */}
+      {/* Main Header */}
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-3 group">
-            {/* Real Logo Image with fallback */}
-            <div className="relative h-14 w-auto flex items-center justify-center">
-              <img
-                src="/logo.png"
-                alt="Monarch Lubricating Oil Trading Company Limited"
-                className="h-14 w-auto object-contain transition-transform group-hover:scale-105"
-                onError={(e: any) => {
-                  // Fallback if logo is in another directory or extension
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = '/logo.png.png';
-                }}
-              />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Monarch Lubricating Oil Trading Company Limited"
+              className="h-14 w-auto object-contain transition-transform group-hover:scale-105"
+              onError={(e: any) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/logo.png.png';
+              }}
+            />
             <div className="hidden sm:block">
               <div className="font-black text-[#1a1d24] text-base leading-tight tracking-tight uppercase">
                 MONARCH
@@ -59,13 +60,13 @@ export default function Navbar({ lang, setLang }: NavbarProps) {
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-700">
             <a href="#products" className="hover:text-[#8B0032] transition-colors">
-              {lang === 'EN' ? 'Products & Specs' : '产品参数'}
+              {lang === 'EN' ? 'Manufactured Products' : '生产产品与参数'}
             </a>
             <a href="#depot" className="hover:text-[#8B0032] transition-colors">
-              {lang === 'EN' ? 'Athi River Depot' : '阿西河仓库'}
+              {lang === 'EN' ? 'Production Plant' : '生产基地'}
             </a>
             <a href="#approvals" className="hover:text-[#8B0032] transition-colors">
-              {lang === 'EN' ? 'OEM Approvals' : 'OEM认证'}
+              {lang === 'EN' ? 'OEM Certifications' : '国际OEM认证'}
             </a>
           </nav>
 
@@ -77,10 +78,12 @@ export default function Navbar({ lang, setLang }: NavbarProps) {
               {lang === 'EN' ? '中文' : 'English'}
             </button>
             <a
-              href="#products"
+              href="https://wa.me/254740506085?text=Hello%20Monarch%20Plant,%20I%20would%20like%20to%20request%20a%20factory-direct%20fleet%20quotation."
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-[#8B0032] hover:bg-[#6b0026] text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors shadow-sm"
             >
-              {lang === 'EN' ? 'Request Fleet Quote' : '车队询价'}
+              {lang === 'EN' ? 'Factory Quote' : '出厂询价'}
             </a>
           </div>
         </div>
